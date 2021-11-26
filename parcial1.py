@@ -37,15 +37,15 @@ class myRobot():
         print(self.yaw)
 
     def callback_laser(self, msg):
-        self.midview = msg.ranges[333]
+        self.midview = msg.ranges[333] #sensor do ranges central
         leftdata = 0
         rightdata = 0
         for i in range(0,83):
             leftdata = leftdata + msg.ranges[i]
         for k in range(583,666):
             rightdata = rightdata + msg.ranges[k]
-        self.leftview = leftdata/83
-        self.rightview = rightdata/83
+        self.leftview = leftdata/83 #faixa considerada como visao esquerda
+        self.rightview = rightdata/83 #faixa considerada como visao direita
         print(self.leftview)
         print(self.rightview)
         print(self.midview)
@@ -63,9 +63,9 @@ class myRobot():
 
     def turn(self):
         print('turn')
-        if self.move_error < 0.1:
+        if self.move_error < 0.1: #and self.leftview < 1.5:
             target_angle = 90
-            target_rad = target_angle * math.pi/180 #degree to rad
+            target_rad = target_angle * math.pi/180 #conversao
             error = target_rad - self.yaw
             while(abs(error) > 0.1):
                 error = target_rad - self.yaw
