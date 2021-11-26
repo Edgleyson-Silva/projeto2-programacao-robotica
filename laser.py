@@ -28,7 +28,6 @@ class mySub():
     def moveStraight(self):
         target_distance = 1
         error = target_distance - self.midview
-
         while (abs(error)>1):
             error = target_distance - self.midview
             self.cmd.linear.x = kP*error
