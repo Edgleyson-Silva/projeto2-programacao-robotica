@@ -14,6 +14,9 @@ class myRobot():
         # Subscriber odometria
         self.sub_odom = rospy.Subscriber('/mobile_base_controller/odom', Odometry, self.callback_odom, queue_size=1)
         self.row = 0
+        self.midview = 0
+        self.leftview = 0
+        self.rightview = 0
         self.pitch = 0
         self.yaw = 0
         self.kP = 0.5 #controlador arbitrario
@@ -50,30 +53,33 @@ class myRobot():
     def moveStraight(self):
         target_distance = 1
         error = target_distance - self.midview
+
         while (abs(error)>0.1):
             error = target_distance - self.midview
-            self.cmd.linear.x = kP*error
-            self.pub.publish(self.cmd)
+            print(error)
+            self.cmd.linear.x = self.kP*abs(error)
+            self.pub_cmd.publish(self.cmd)
         self.move_error = error
 
     def turn(self):
         print('turn')
-        if self.move_error < 0.1 and self.leftview < 1.5:
-            target_rad = 90
+        if self.move_error < 0.1:
+            target_angle = 90
             target_rad = target_angle * math.pi/180 #degree to rad
             error = target_rad - self.yaw
             while(abs(error) > 0.1):
                 error = target_rad - self.yaw
+                print('odom {}' .format(error))
                 self.cmd.angular.z = self.kP * error
                 self.pub_cmd.publish(self.cmd)
-        elif self.move_error < 0.1 and self.rightview < 1.5:
-            target_rad = -90
-            target_rad = target_angle * math.pi / 180  # degree to rad
-            error = target_rad - self.yaw
-            while (abs(error) > 0.1):
-                error = target_rad - self.yaw
-                self.cmd.angular.z = self.kP * error
-                self.pub_cmd.publish(self.cmd)
+       # elif self.move_error < 0.1 and self.rightview < 1.5:
+        #    target_angle = -90
+         #   target_rad = target_angle * math.pi / 180  # degree to rad
+          #  error = target_rad - self.yaw
+          #  while (abs(error) > 0.1):
+           #     error = target_rad - self.yaw
+            #    self.cmd.angular.z = self.kP * error
+             #   self.pub_cmd.publish(self.cmd)
 
 if __name__ == '__main__':
     # Define the node
@@ -82,5 +88,6 @@ if __name__ == '__main__':
     subObj = myRobot()
     subObj.moveStraight()
     subObj.turn()
+    subObj.moveStraight()
     # While ROS is running
     rospy.spin()
