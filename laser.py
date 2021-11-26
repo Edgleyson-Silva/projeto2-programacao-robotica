@@ -13,7 +13,21 @@ class mySub():
     # Definition of the function called by the subscriber
     def callback(self, msg):
         #self.counterValue = msg.data
-        print(msg.ranges)
+        leftdata = 0
+        middata = 0
+        rightdata = 0
+        for i in range(0,198):
+            leftdata = leftdata + msg.ranges[i]
+        for j in range(198,470):
+            middata = middata + msg.ranges[j]
+        for k in range(470,665):
+            rightdata = rightdata + msg.ranges[k]
+        leftview = leftdata/198
+        midview = middata/272
+        rightview = rightdata/198
+        print(leftview)
+        print(midview)
+        print(rightview)
 
 # Main program
 if __name__ == '__main__':
