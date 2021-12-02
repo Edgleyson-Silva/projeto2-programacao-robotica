@@ -6,6 +6,7 @@ from nav_msgs.msg import Odometry
 from tf.transformations import euler_from_quaternion
 from sensor_msgs.msg import LaserScan
 import math
+import camera
 
 class myRobot():
 
@@ -23,6 +24,7 @@ class myRobot():
         # Subscriber laser
         self.sub_laser = rospy.Subscriber('/scan_raw', LaserScan, self.callback_laser, queue_size=1)
         # Client Service camera
+
         # Publisher base
         self.pub_cmd = rospy.Publisher('/mobile_base_controller/cmd_vel', Twist, queue_size=1)
         self.cmd = Twist()
@@ -83,11 +85,15 @@ class myRobot():
 
 if __name__ == '__main__':
     # Define the node
-    rospy.init_node('TIAGo_odem_node')
+    #rospy.init_node('TIAGo_odem_node')
+
     # Create an object of class mySub and run the init function
-    subObj = myRobot()
-    subObj.moveStraight()
-    subObj.turn()
-    subObj.moveStraight()
+    #subObj = myRobot()
+    rospy.init_node('add_image_service_name')
+    subCam = myCamera()
+    my_service = rospy.Service('add_image_service_name', add_image, subCam.callback_ServiceCamera)
+    #subObj.moveStraight()
+    #subObj.turn()
+    #subObj.moveStraight()
     # While ROS is running
     rospy.spin()
