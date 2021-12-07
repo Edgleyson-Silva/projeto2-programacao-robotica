@@ -4,7 +4,7 @@ import rospy
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
 from sensor_msgs.msg import Image
-from programacao.srv import add_image, add_imageResponse
+from programacao.srv import addImage, addImageResponse
 
 class myCamera():
 
@@ -22,10 +22,11 @@ class myCamera():
 
 
     def callback_ServiceCamera(self, request):
-        print('executing add_image service')
-        (blueChannel, greenChannel, redChannel) = cv2.split(request.img)
+        print('executing addImage service')
+        request = self.cv_image
+        (blueChannel, greenChannel, redChannel) = cv2.split(request)
         cv2.imshow("Green", greenChannel)
-        ret, t = cv2.threshold(canalVerde, 160, 255, cv2.THRESH_BINARY)
+        ret, t = cv2.threshold(greenChannel, 160, 255, cv2.THRESH_BINARY)
         blackpx = 0
         whitepx = 0
         row = len(t)
@@ -40,20 +41,19 @@ class myCamera():
                 elif px == 255:
                     whitepx = whitepx + 1 #pixels vermelhos
         if whitepx > blackpx:
-            return add_imageResponse('green')
+            return addImageResponse('green')
         elif blackpx >  whitepx:
-            return add_imageResponse('red')
+            return addImageResponse('red')
 
 
     def callback_SubscribeCamera(self, msg):
         print('callback camera')
-        rospy.wait_for_service('add_image_service_name')
+        rospy.wait_for_service('addImage_service_name')
         try:
-            h_add_image = rospy.ServiceProxy('add_image_service_name', add_image)
+            h_addImage = rospy.ServiceProxy('addImage_service_name', addImage)
             self.cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
-            request =add_imageRequest()
-            request.img = self.cv_image
-            self.response = h_add_image(request)
+            #request =addImageRequest()
+            self.response = h_addImage()
         except CvBridgeError as e:
             print(e)
 

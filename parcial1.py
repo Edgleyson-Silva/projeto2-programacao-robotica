@@ -5,9 +5,12 @@ from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from tf.transformations import euler_from_quaternion
 from sensor_msgs.msg import LaserScan
-from programacao.srv import add_image, add_imageResponse
+from programacao.srv import addImage, addImageResponse
+from sensor_msgs.msg import Image
 import math
-import camera
+from trajectory_msgs.msg import JointTrajectory
+from trajectory_msgs.msg import JointTrajectoryPoint
+from camera import myCamera
 
 class myRobot():
 
@@ -21,7 +24,7 @@ class myRobot():
         self.rightview = 0
         self.pitch = 0
         self.yaw = 0
-        self.kP = 0.5 #controlador arbitrario
+        self.kP = 1 #controlador arbitrario
         # Subscriber laser
         self.sub_laser = rospy.Subscriber('/scan_raw', LaserScan, self.callback_laser, queue_size=1)
         # Client Service camera
@@ -30,6 +33,9 @@ class myRobot():
         self.pub_cmd = rospy.Publisher('/mobile_base_controller/cmd_vel', Twist, queue_size=1)
         self.cmd = Twist()
         # Publisher cabeca
+        self.pub_head = rospy.Publisher('/head_controller/command', JointTrajectory, queue_size=1)
+        self.cmd_head = JointTrajectory()
+        self.points = JointTrajectoryPoint()
 
     def callback_odom(self, msg):
         print('callback odometria')
@@ -44,55 +50,81 @@ class myRobot():
         leftdata = 0
         rightdata = 0
         for i in range(0,83):
-            leftdata = leftdata + msg.ranges[i]
+            rightdata = rightdata + msg.ranges[i]
         for k in range(583,666):
-            rightdata = rightdata + msg.ranges[k]
+            leftdata = leftdata + msg.ranges[k]
         self.leftview = leftdata/83 #faixa considerada como visao esquerda
         self.rightview = rightdata/83 #faixa considerada como visao direita
-        print(self.leftview)
+       # print(self.leftview)
         print(self.rightview)
-        print(self.midview)
+        #print(self.midview)
 
     def moveStraight(self):
-        target_distance = 1
+        target_distance = 0.6
         error = target_distance - self.midview
 
-        while (abs(error)>0.1):
+        while (abs(error)>0.01):
             error = target_distance - self.midview
             print(error)
             self.cmd.linear.x = self.kP*abs(error)
             self.pub_cmd.publish(self.cmd)
         self.move_error = error
 
-    def turn(self):
+    def error(self,target):
+        error = target - self.yaw
+        print(error)
+        print(self.yaw)
+        return error
+
+    def turn(self, sensor, target):
         print('turn')
-        if self.move_error < 0.1: #and self.leftview < 1.5:
-            target_angle = 90
-            target_rad = target_angle * math.pi/180 #conversao
-            error = target_rad - self.yaw
-            while(abs(error) > 0.1):
-                error = target_rad - self.yaw
-                print('odom {}' .format(error))
-                self.cmd.angular.z = self.kP * error
-                self.pub_cmd.publish(self.cmd)
-       # elif self.move_error < 0.1 and self.rightview < 1.5:
-        #    target_angle = -90
-         #   target_rad = target_angle * math.pi / 180  # degree to rad
-          #  error = target_rad - self.yaw
-          #  while (abs(error) > 0.1):
-           #     error = target_rad - self.yaw
-            #    self.cmd.angular.z = self.kP * error
-             #   self.pub_cmd.publish(self.cmd)
+        while (abs(self.error(target)) > 0.01):
+            self.cmd.angular.z = sensor*self.kP*self.error(target)
+            self.pub_cmd.publish(self.cmd)
+        self.cmd.angular.z = 0
+        self.pub_cmd.publish(self.cmd)
 
 if __name__ == '__main__':
     # Define the node
-    #rospy.init_node('TIAGo_odem_node')
+    rospy.init_node('TIAGo_odem_node')
 
     # Create an object of class mySub and run the init function
-    #subObj = myRobot()
-    rospy.init_node('add_image_service_name')
-    subCam = myCamera()
-    my_service = rospy.Service('add_image_service_name', add_image, subCam.callback_ServiceCamera)
+    subObj = myRobot()
+
+    if subObj.leftview < 1.5 and subObj.rightview < 1.5:
+        subObj.moveStraight()
+    if subObj.move_error < 0.01:
+        if subObj.leftview < 1.5 or subObj.rightview < 1.5:
+            if subObj.leftview < 1.5:
+                target = -90 * math.pi / 180
+                subObj.error(target)
+                sensor = -1
+                subObj.turn(sensor,target)
+                subObj.moveStraight()
+            elif subObj.rightview < 1.5:
+                target = 90 * math.pi / 180
+                subObj.error(target)
+                sensor = 1
+                subObj.turn(sensor,target)
+                subObj.moveStraight()
+
+        elif subObj.leftview > 1.5 and subObj.rightview > 1.5:
+            subObj.cmd_head.joint_names.append("head_1_joint")
+            subObj.cmd_head.joint_names.append("head_2_joint")
+            subObj.points.positions = [0] * 2
+            subObj.points.time_from_start = rospy.Duration(1)
+            subObj.cmd_head.points.append(subObj.points)
+            angle = -0.1
+            while angle != -1.57:
+                subObj.cmd_head.points[0].positions[0] = angle
+                subObj.cmd_head.points[0].time_from_start = rospy.Duration(1)
+                subObj.pub_head.publish(subObj.cmd_head)
+                angle = angle - 0.1
+            subCam = myCamera()
+            
+    #rospy.init_node('addImage_service_name')
+    #subCam = myCamera()
+    #my_service = rospy.Service('addImage_service_name', addImage, subCam.callback_ServiceCamera)
     #subObj.moveStraight()
     #subObj.turn()
     #subObj.moveStraight()
