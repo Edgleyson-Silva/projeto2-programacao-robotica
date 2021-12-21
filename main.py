@@ -103,6 +103,41 @@ if __name__ == '__main__':
 
     # Create an object of class mySub and run the init function
     subObj = myRobot()
+    state = 0
+    while(...):
+        if state == 0:
+            if subObj.midview > 0.7:
+                state = 3
+            else:
+                state = 1
+        elif state == 1:
+            if subObj.leftview < 1.3:
+                target = -90 * math.pi / 180 + subObj.yaw
+                subObj.error(target)
+                sensor = 1
+                subObj.turn(sensor, target)
+                state = 0
+            elif subObj.rightview < 1.3:
+                target = 90 * math.pi / 180 + subObj.yaw
+                subObj.error(target)
+                sensor = -1
+                subObj.turn(sensor,target)
+                subObj.moveStraight()
+                state = 0
+        elif state == 3:
+            subObj.moveStraight()
+            state = 0
+    # decision
+    # compute next state
+    # else if state == 1
+    # image porcessing
+    # compute next state
+    # else if state == 3
+    # move straight
+    # compute next state
+    # else if state == 4
+    # turn
+    # compute next state
 
     if subObj.leftview < 1.3 and subObj.rightview < 1.3:
         subObj.moveStraight()
@@ -149,7 +184,6 @@ if __name__ == '__main__':
             sensor = 1
             subObj.turn(sensor,target)
             subObj.moveStraight()
-
 
            
     # While ROS is running
