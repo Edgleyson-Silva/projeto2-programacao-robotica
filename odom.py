@@ -12,7 +12,7 @@ class myRobot():
     def __init__(self):
         print('init')
         # Subscriber odometria
-        self.sub = rospy.Subscriber('/mobile_base_controller/odom', Odometry, self.callback, queue_size=1) #pega dados atuais do robo
+        self.sub = rospy.Subscriber('/mobile_base_controller/odom', Odometry, self.callback, queue_size=1)
         self.row = 0
         self.pitch = 0
         self.yaw = 0
@@ -21,27 +21,27 @@ class myRobot():
         #self.sub_laser = rospy.Subscriber('/scan_raw', LaserScan, self.callback_laser, queue_size=1)
         # Client Service camera
         # Publisher base
-        self.pub = rospy.Publisher('/mobile_base_controller/cmd_vel', Twist, queue_size=1) ##### topico q mexe com vel do robo
-        self.cmd = Twist() #vai ser publicado com novas velocidades
+        self.pub = rospy.Publisher('/mobile_base_controller/cmd_vel', Twist, queue_size=1)
+        self.cmd = Twist()
         # Publisher cabeca
 
     def callback(self, msg):
         print('callback odometria')
         # Armazenar os dados de odometria
-        self.orientation = msg.pose.pose.orientation #posicao (x, y, z, w) quaternion ###### pose.pose.orientation -> vem de odometry
-        self.orientation_list = [self.orientation.x, self.orientation.y, self.orientation.z, self.orientation.w] #quaternion eh uma lista com 4 valores, aqui separa
-        (self.row, self.pitch, self.yaw) = euler_from_quaternion(self.orientation_list) #passa p euler e pega ang em x y e z
+        self.orientation = msg.pose.pose.orientation #posicao quaternion
+        self.orientation_list = [self.orientation.x, self.orientation.y, self.orientation.z, self.orientation.w]
+        (self.row, self.pitch, self.yaw) = euler_from_quaternion(self.orientation_list)
         print(self.yaw)
 
     def turn(self):
         print('turn')
-        target_angle = 90 #target_angle funcao do que vai ser captado no sens
+        target_angle = 90 #target_angleu funcao do que vai ser captado no sens
         target_rad = target_angle * math.pi/180 #degree to rad
         error = target_rad - self.yaw
-        while(abs(error) > 0):
+        while(abs(error) > 0.01):
             error = target_rad - self.yaw
-            self.cmd.angular.z = self.kP * error #vel angular
-            self.pub.publish(self.cmd) #muda Kp e posicoes pra chegar em 90
+            self.cmd.angular.z = self.kP * error
+            self.pub.publish(self.cmd)
 
 if __name__ == '__main__':
     # Define the node
