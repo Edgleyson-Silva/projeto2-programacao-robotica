@@ -85,6 +85,17 @@ class myRobot():
             self.pub_cmd.publish(self.cmd)
         self.cmd.angular.z = 0
         self.pub_cmd.publish(self.cmd)
+        
+    def SubscribeCamera(self, msg):
+        print('callback camera')
+        rospy.wait_for_service('addImage_service_name')
+        try:
+            h_addImage = rospy.ServiceProxy('addImage_service_name', addImage)
+            self.cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+            #request =addImageRequest()
+            self.response = h_addImage()
+        except CvBridgeError as e:
+            print(e)
 
 if __name__ == '__main__':
     # Define the node

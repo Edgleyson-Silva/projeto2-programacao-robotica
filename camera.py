@@ -14,7 +14,7 @@ class myCamera():
         self.bridge = CvBridge()
         self.resposta = ''
         # Subscriber to the camera image
-        self.image_sub = rospy.Subscriber("/xtion/rgb/image_color",Image,self.callback_SubscribeCamera)
+        self.image_sub = rospy.Subscriber("/xtion/rgb/image_color",Image,SubscribeCamera)
 
         # Server Service camera
 
@@ -46,16 +46,7 @@ class myCamera():
             return self.resposta
 
 
-    def callback_SubscribeCamera(self, msg):
-        print('callback camera')
-        rospy.wait_for_service('addImage_service_name')
-        try:
-            h_addImage = rospy.ServiceProxy('addImage_service_name', addImage)
-            self.cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
-            #request =addImageRequest()
-            self.response = h_addImage()
-        except CvBridgeError as e:
-            print(e)
+
 
         # cv_image[linha][coluna][bgr] bgr-> 0:blue, 1:green, 2:red
         #print(self.cv_image[0][0])
