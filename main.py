@@ -56,7 +56,7 @@ class myRobot():
         self.leftview = leftdata/83 #faixa considerada como visao esquerda
         self.rightview = rightdata/83 #faixa considerada como visao direita
        # print(self.leftview)
-        print(self.rightview)
+       # print(self.rightview)
         #print(self.midview)
 
     def moveStraight(self):
@@ -68,14 +68,14 @@ class myRobot():
             print(error)
             self.cmd.linear.x = self.kP*abs(error)
             self.pub_cmd.publish(self.cmd)
-            print('esquerda: {}' .format(self.leftview))
-            print('direita: {}'.format(self.rightview))
+          #  print('esquerda: {}' .format(self.leftview))
+           # print('direita: {}'.format(self.rightview))
         self.move_error = error
 
     def error(self,target):
         error = target - self.yaw
-        print('erro: {}'.format(error))
-        print('angulo atual: {}'.format(self.yaw))
+       # print('erro: {}'.format(error))
+      #  print('angulo atual: {}'.format(self.yaw))
         return error
 
     def turn(self, sensor, target):
@@ -86,27 +86,31 @@ class myRobot():
         self.cmd.angular.z = 0
         self.pub_cmd.publish(self.cmd)
         
-    def SubscribeCamera(self, msg):
-        print('callback camera')
+    def SubscribeCamera(self):
+        print('subscribe camera')
         rospy.wait_for_service('addImage_service_name')
         try:
-            h_addImage = rospy.ServiceProxy('addImage_service_name', addImage)
-            self.cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
-            #request =addImageRequest()
-            self.response = h_addImage()
+            self.cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8") 
+            request =addImageRequest()
+            response = h_addImage(request)
+            
         except CvBridgeError as e:
             print(e)
-
+        return response
+    
 if __name__ == '__main__':
     # Define the node
     rospy.init_node('TIAGo_odem_node')
 
     # Create an object of class mySub and run the init function
     subObj = myRobot()
+    
+    rospy.sleep(1.)
     state = 0
-    while(...):
+  
+    while(1):
         if state == 0:
-            if subObj.midview > 0.7:
+            if subObj.midview > 1:
                 state = 3
             else:
                 state = 1
@@ -124,9 +128,43 @@ if __name__ == '__main__':
                 subObj.turn(sensor,target)
                 subObj.moveStraight()
                 state = 0
+            else:
+                state = 4
+                
         elif state == 3:
             subObj.moveStraight()
             state = 0
+        elif state == 4:
+            subObj.cmd_head.joint_names.append("head_1_joint")
+            subObj.cmd_head.joint_names.append("head_2_joint")
+            subObj.points.positions = [0] * 2
+            subObj.points.time_from_start = rospy.Duration(1)
+            subObj.cmd_head.points.append(subObj.points)
+            angle = 0.1
+            while angle < 2:
+                subObj.cmd_head.points[0].positions[0] = angle
+                subObj.cmd_head.points[0].time_from_start = rospy.Duration(1)
+                subObj.pub_head.publish(subObj.cmd_head)
+                angle = angle + 0.01
+                print(angle)
+            print('camera')
+            rospy.sleep(3)
+            # rospy.init_node('addImage_service_name')
+            subCam = myCamera()
+            my_service = rospy.Service('addImage_service_name', addImage, subCam.callback_ServiceCamera)
+            if subCam.resposta == 'green':
+                target = 90 * math.pi / 180 + subObj.yaw
+                subObj.error(target)
+                sensor = -1
+                subObj.turn(sensor, target)
+                state = 0
+
+            elif subCam.resposta == 'red':
+                target = -90 * math.pi / 180 + subObj.yaw
+                subObj.error(target)
+                sensor = 1
+                subObj.turn(sensor, target)
+                state = 0
     # decision
     # compute next state
     # else if state == 1
@@ -139,51 +177,52 @@ if __name__ == '__main__':
     # turn
     # compute next state
 
-    if subObj.leftview < 1.3 and subObj.rightview < 1.3:
-        subObj.moveStraight()
-    if subObj.move_error < 0.01:
-        if subObj.leftview < 1.3:
-            target = -90 * math.pi / 180 + subObj.yaw
-            subObj.error(target)
-            sensor = 1
-            subObj.turn(sensor,target)
-            subObj.moveStraight()
-        elif subObj.rightview < 1.3:
-            target = 90 * math.pi / 180 + subObj.yaw
-            subObj.error(target)
-            sensor = -1
-            subObj.turn(sensor,target)
-            subObj.moveStraight()
-    if subObj.leftview > 1.3 or subObj.rightview > 1.3:
-        subObj.cmd_head.joint_names.append("head_1_joint")
-        subObj.cmd_head.joint_names.append("head_2_joint")
-        subObj.points.positions = [0] * 2
-        subObj.points.time_from_start = rospy.Duration(1)
-        subObj.cmd_head.points.append(subObj.points)
-        angle = 0.1
-        while angle < 2:
-            subObj.cmd_head.points[0].positions[0] = angle
-            subObj.cmd_head.points[0].time_from_start = rospy.Duration(1)
-            subObj.pub_head.publish(subObj.cmd_head)
-            angle = angle + 0.01
-            print(angle)
-        print('camera')
-        rospy.sleep(3)
+  #  if subObj.leftview < 1.3 and subObj.rightview < 1.3:
+
+   #     subObj.moveStraight()
+   # if subObj.move_error < 0.01:
+    #    if subObj.leftview < 1.3:
+     #       target = -90 * math.pi / 180 + subObj.yaw
+      #      subObj.error(target)
+       #     sensor = 1
+        #    subObj.turn(sensor,target)
+         #   subObj.moveStraight()
+    #    elif subObj.rightview < 1.3:
+     #       target = 90 * math.pi / 180 + subObj.yaw
+      #      subObj.error(target)
+       #     sensor = -1
+        #    subObj.turn(sensor,target)
+         #   subObj.moveStraight()
+   # if subObj.leftview > 1.3 or subObj.rightview > 1.3:
+    #    subObj.cmd_head.joint_names.append("head_1_joint")
+     #   subObj.cmd_head.joint_names.append("head_2_joint")
+      #  subObj.points.positions = [0] * 2
+       # subObj.points.time_from_start = rospy.Duration(1)
+     #   subObj.cmd_head.points.append(subObj.points)
+      #  angle = 0.1
+       # while angle < 2:
+        #    subObj.cmd_head.points[0].positions[0] = angle
+         #   subObj.cmd_head.points[0].time_from_start = rospy.Duration(1)
+          #  subObj.pub_head.publish(subObj.cmd_head)
+           # angle = angle + 0.01
+     #       print(angle)
+      #  print('camera')
+       # rospy.sleep(3)
        # rospy.init_node('addImage_service_name')
-        subCam = myCamera()
-        my_service = rospy.Service('addImage_service_name', addImage, subCam.callback_ServiceCamera)
-        if subCam.resposta == 'green':
-            target = 90 * math.pi / 180 + subObj.yaw
-            subObj.error(target)
-            sensor = -1
-            subObj.turn(sensor, target)
-            subObj.moveStraight()
-        elif subCam.resposta == 'red':
-	    target = -90 * math.pi / 180 + subObj.yaw
-            subObj.error(target)
-            sensor = 1
-            subObj.turn(sensor,target)
-            subObj.moveStraight()
+      #  subCam = myCamera()
+       # my_service = rospy.Service('addImage_service_name', addImage, subCam.callback_ServiceCamera)
+        #if subCam.resposta == 'green':
+        #    target = 90 * math.pi / 180 + subObj.yaw
+         #   subObj.error(target)
+          #  sensor = -1
+           # subObj.turn(sensor, target)
+            #subObj.moveStraight()
+        #elif subCam.resposta == 'red':
+	    #target = -90 * math.pi / 180 + subObj.yaw
+         #   subObj.error(target)
+          #  sensor = 1
+           # subObj.turn(sensor,target)
+            #subObj.moveStraight()
 
            
     # While ROS is running

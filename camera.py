@@ -17,7 +17,7 @@ class myCamera():
         self.image_sub = rospy.Subscriber("/xtion/rgb/image_color",Image,SubscribeCamera)
 
         # Server Service camera
-
+        h_addImage = rospy.ServiceProxy('addImage_service_name', addImage)
 
     def callback_ServiceCamera(self, request):
         print('executing addImage service')
